@@ -13,8 +13,7 @@ export const useAuth = () => {
       setIsAuthenticated(true);
       navigate('/success'); 
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
-      alert('Invalid credentials');
+      throw error;
     }
   };
 
