@@ -12,7 +12,7 @@ export const CreateUserPage = () => {
     passwordConfirmation: '',
     role: 1,
   });
-  const [errorMessages, setErrorMessages] = useState<string[]>([]); // Agora é um array de erros
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -74,7 +74,19 @@ export const CreateUserPage = () => {
       <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} />
       <input type="password" name="passwordConfirmation" placeholder="Confirm Password" value={form.passwordConfirmation} onChange={handleChange} />
       
-      <select name="role" value={form.role} onChange={handleChange}>
+      <select
+        name="role"
+        value={form.role}
+        onChange={handleChange}
+        style={{
+            width: '100%',
+            padding: '12px 8px',
+            marginBottom: '10px',
+            borderRadius: '6px',
+            border: '1px solid #ccc',
+            fontSize: '16px',
+        }}
+        >
         <option value={0}>Admin</option>
         <option value={1}>Customer</option>
       </select>
