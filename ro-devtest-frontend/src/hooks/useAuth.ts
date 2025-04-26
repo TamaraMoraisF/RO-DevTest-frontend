@@ -11,7 +11,7 @@ export const useAuth = () => {
       const data = await login({ username: username.toUpperCase(), password });
       localStorage.setItem('accessToken', data.accessToken);
       setIsAuthenticated(true);
-      navigate('/success');
+      navigate('/success'); 
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       alert('Invalid credentials');
