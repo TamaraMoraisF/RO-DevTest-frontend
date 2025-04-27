@@ -363,7 +363,6 @@ export const ProductList = ({ userRole }: { userRole: string | null }) => {
             </tbody>
           </table>
 
-          {/* Paginação */}
           <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
             <button onClick={handlePreviousPage} disabled={page === 1}>Previous</button>
             <span>Page {page} of {totalPages}</span>

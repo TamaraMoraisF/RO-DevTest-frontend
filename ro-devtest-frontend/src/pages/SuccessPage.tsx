@@ -36,7 +36,7 @@ function SuccessPage() {
 
   const loadCustomers = async () => {
     try {
-      const customersResult = await getCustomers(1, 50);
+      const customersResult = await getCustomers({ page: 1, pageSize: 50 });
       setCustomers(customersResult.items);
     } catch (err) {
       console.error('Error loading customers:', err);

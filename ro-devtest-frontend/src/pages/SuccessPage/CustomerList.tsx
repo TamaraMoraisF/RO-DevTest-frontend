@@ -14,22 +14,51 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
   const [customerIdToDelete, setCustomerIdToDelete] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'email'>('name');
+  const [descending, setDescending] = useState(false);
 
   const isAdmin = userRole === 'Admin';
 
   useEffect(() => {
     fetchCustomers();
-  }, [page]);
+  }, [page, pageSize, search, sortBy, descending]);
 
   const fetchCustomers = async () => {
     try {
-      const data = await getCustomers(page, pageSize);
+      const data = await getCustomers({ page, pageSize, search, sortBy, descending });
       setCustomers(data.items);
       setTotalPages(data.totalPages);
     } catch (error) {
       console.error('Error fetching customers:', error);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as 'name' | 'email');
+  };
+
+  const handleDescendingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDescending(e.target.checked);
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (value > 0) {
+      setPageSize(value);
+      setPage(1);
     }
   };
 
@@ -39,11 +68,6 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
 
   const handleNextPage = () => {
     if (page < totalPages) setPage(page + 1);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
   };
 
   const handleEditClick = (customer: Customer) => {
@@ -145,6 +169,46 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
 
       <h2>Customers</h2>
 
+      <div style={{ backgroundColor: 'white', padding: '20px', marginBottom: '20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '15px' }}>
+        <input
+          type="text"
+          placeholder="Search customer names..."
+          value={search}
+          onChange={handleSearchChange}
+          style={{ flex: '0 0 200px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        />
+
+        <select
+          value={sortBy}
+          onChange={handleSortChange}
+          style={{ flex: '0 0 150px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        >
+          <option value="name">Name</option>
+          <option value="email">Email</option>
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <input
+            type="checkbox"
+            checked={descending}
+            onChange={handleDescendingChange}
+            style={{ width: '16px', height: '16px' }}
+          />
+          Descending
+        </label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="number"
+            value={pageSize}
+            min={1}
+            onChange={handlePageSizeChange}
+            style={{ width: '80px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+          />
+          <small style={{ color: '#666' }}>Records per page</small>
+        </div>
+      </div>
+
       {isAdmin && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
           <h3>{editingCustomerId ? 'Edit Customer' : 'Create New Customer'}</h3>
@@ -153,9 +217,7 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
           {errorMessages.length > 0 && (
             <div style={{ color: 'red', marginBottom: '10px' }}>
               <ul style={{ paddingLeft: '20px' }}>
-                {errorMessages.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
+                {errorMessages.map((error, index) => <li key={index}>{error}</li>)}
               </ul>
             </div>
           )}
@@ -179,20 +241,7 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
           />
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="submit"
-              style={{
-                marginTop: '10px',
-                flex: 1,
-                backgroundColor: '#6c63ff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px',
-                fontSize: '16px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="submit" style={{ marginTop: '10px', flex: 1, backgroundColor: '#6c63ff', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '16px', cursor: 'pointer' }}>
               {editingCustomerId ? 'Update Customer' : 'Create Customer'}
             </button>
 
@@ -200,17 +249,7 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                style={{
-                  marginTop: '10px',
-                  flex: 1,
-                  backgroundColor: '#ccc',
-                  color: '#333',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  fontSize: '16px',
-                  cursor: 'pointer'
-                }}
+                style={{ marginTop: '10px', flex: 1, backgroundColor: '#ccc', color: '#333', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '16px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -238,36 +277,8 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
                   <td>{customer.email}</td>
                   {isAdmin && (
                     <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick(customer)}
-                        style={{
-                          backgroundColor: '#ffa500',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(customer.id)}
-                        style={{
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Delete
-                      </button>
+                      <button type="button" onClick={() => handleEditClick(customer)} style={{ backgroundColor: '#ffa500', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '14px', cursor: 'pointer' }}>Edit</button>
+                      <button type="button" onClick={() => handleDeleteClick(customer.id)} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '14px', cursor: 'pointer' }}>Delete</button>
                     </td>
                   )}
                 </tr>
@@ -275,7 +286,6 @@ export const CustomerList = ({ userRole }: { userRole: string | null }) => {
             </tbody>
           </table>
 
-          {/* Paginação */}
           <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
             <button onClick={handlePreviousPage} disabled={page === 1}>Previous</button>
             <span>Page {page} of {totalPages}</span>
