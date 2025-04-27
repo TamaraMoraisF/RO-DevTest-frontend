@@ -1,54 +1,97 @@
-# React + TypeScript + Vite
+# RO.DevTest-Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is the **frontend** application for the [RO.DevTest](https://github.com/TamaraMoraisF/RO.DevTest) backend.  
+It provides a user interface to manage customers, products, and sales, supporting authentication, role-based access, pagination, sorting, and sales analytics.
 
-Currently, two official plugins are available:
+It was developed to meet the requirements of the **Rota das Oficinas technical test**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧩Features
 
-## Expanding the ESLint configuration
+- **Login and Authentication:** Login screen with JWT authentication.
+- **Role-Based Access:** Different screens and permissions for `Admin` and `Customer` roles.
+- **CRUD Operations:**
+  - Create, edit, and delete **Products** (Admin only).
+  - Create, edit, and delete **Customers** (Admin only).
+  - Create and view **Sales** (Admin only).
+- **Sales Analytics:** Analyze total sales, total revenue, and product-wise breakdown for a selected period.
+- **Pagination and Sorting:** Available for Product, Customer, and Sale listings.
+- **Form Validations:** Inputs validated directly on the client side.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ⚙️ Technologies Used
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- React + TypeScript
+- Axios for API communication
+- React Router for navigation
+- JWT Decode for token handling
+- Vite for building and running the project
+
+## 📦 Running the Project
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/TamaraMoraisF/RO-DevTest-frontend.git
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Navigate to the project folder
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+cd RO-DevTest-frontend
 ```
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+The application will run at:
+
+```
+http://localhost:5173
+```
+
+## 🔐 Authentication and Authorization
+
+After logging in, a JWT token is stored in the browser's local storage.  
+The token is used to authenticate all API requests to the backend.
+
+### Example of the localStorage content:
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+## 🧩 Backend Integration
+
+This frontend consumes the API provided by the [RO.DevTest backend](https://github.com/TamaraMoraisF/RO.DevTest).
+
+> ⚡ Make sure the backend is running at `https://localhost:7014` (or adjust the base URL in the Axios configuration if necessary).
+
+Features such as login, CRUD operations, and analytics rely on the backend endpoints.
+
+## 📄 Project Structure
+
+```
+src/
+├── api/             # Axios instance
+├── components/      # Reusable components (modals, tables, etc.)
+├── models/          # TypeScript types (Product, Customer, Sale, etc.)
+├── pages/           # Main screens (LoginPage, SuccessPage, etc.)
+├── services/        # Service functions to call backend APIs
+└── App.tsx          # Application routes and layout
+```
+
+## 📝 Notes
+
+- Proper error handling and loading states are implemented.
+- Unauthorized users are redirected to the login page.
+- Role-based access control is enforced at the frontend level as well.
