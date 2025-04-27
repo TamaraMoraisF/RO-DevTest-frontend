@@ -31,8 +31,11 @@ function SuccessPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [sortBy, setSortBy] = useState<'saleDate' | 'total' | 'customer'>('saleDate');
+  const [descending, setDescending] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+
 
   const loadCustomers = async () => {
     try {
@@ -56,7 +59,7 @@ function SuccessPage() {
 
   const loadSales = async (pageToLoad: number) => {
     try {
-      const salesResult = await getSales(pageToLoad, pageSize);
+      const salesResult = await getSales({ page: pageToLoad, pageSize, sortBy, descending });
       const safeSales = salesResult.items.map((sale: Sale) => ({
         ...sale,
         items: sale.items || [],
@@ -143,6 +146,12 @@ function SuccessPage() {
             page={page}
             totalPages={totalPages}
             setPage={setPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            descending={descending}
+            setDescending={setDescending}
           />
           <AnalyticsReport
             analytics={analytics}

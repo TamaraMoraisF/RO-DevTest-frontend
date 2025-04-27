@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sale } from '../../models/Sale';
 import { Product } from '../../models/Product';
 import { Customer } from '../../models/Customer';
@@ -13,13 +13,37 @@ interface SalesListProps {
   page: number;
   totalPages: number;
   setPage: React.Dispatch<React.SetStateAction<number>>;
+  pageSize: number;
+  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  sortBy: 'saleDate' | 'total' | 'customer';
+  setSortBy: React.Dispatch<React.SetStateAction<'saleDate' | 'total' | 'customer'>>;
+  descending: boolean;
+  setDescending: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SalesList = ({ sales, products, customers, reloadSales, page, totalPages, setPage }: SalesListProps) => {
+export const SalesList = ({
+  sales,
+  products,
+  customers,
+  reloadSales,
+  page,
+  totalPages,
+  setPage,
+  pageSize,
+  setPageSize,
+  sortBy,
+  setSortBy,
+  descending,
+  setDescending
+}: SalesListProps) => {
   const [customerId, setCustomerId] = useState('');
   const [items, setItems] = useState([{ productId: '', quantity: '', unitPrice: '' }]);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    reloadSales();
+  }, [page, pageSize, sortBy, descending]);
 
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
@@ -99,6 +123,51 @@ export const SalesList = ({ sales, products, customers, reloadSales, page, total
   return (
     <>
       <h2>Sales</h2>
+
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          marginBottom: '20px',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '15px'
+        }}
+      >
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value as 'saleDate' | 'total' | 'customer'); setPage(1); }}
+          style={{ flex: '0 0 150px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        >
+          <option value="saleDate">Sale Date</option>
+          <option value="total">Total</option>
+          <option value="customer">Customer</option>
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <input
+            type="checkbox"
+            checked={descending}
+            onChange={(e) => { setDescending(e.target.checked); setPage(1); }}
+            style={{ width: '16px', height: '16px' }}
+          />
+          Descending
+        </label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="number"
+            value={pageSize}
+            min={1}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            style={{ width: '80px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+          />
+          <small style={{ color: '#666' }}>Records per page</small>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #ddd', borderRadius: '12px', backgroundColor: '#fff' }}>
         <h3>Create New Sale</h3>
