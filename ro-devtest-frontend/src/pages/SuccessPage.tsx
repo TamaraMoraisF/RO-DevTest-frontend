@@ -18,6 +18,7 @@ import { AnalyticsReport } from './SuccessPage/AnalyticsReport';
 
 function SuccessPage() {
   const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -28,6 +29,27 @@ function SuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Função separada para carregar produtos
+  const loadProducts = async () => {
+    try {
+      const productsData = await getProducts();
+      setProducts(productsData);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Failed to load products.');
+    }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const customersData = await getCustomers();
+      setCustomers(customersData);
+    } catch (err) {
+      console.error('Error loading customers:', err);
+      setError('Failed to load customers.');
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -42,13 +64,10 @@ function SuccessPage() {
     const fetchData = async () => {
       try {
         if (decodedToken?.role === 'Admin' || decodedToken?.role === 'Customer') {
-          const [productsData, customersData] = await Promise.all([
-            getProducts(),
-            getCustomers(),
+          await Promise.all([
+            loadProducts(),
+            loadCustomers(),
           ]);
-
-          setProducts(productsData);
-          setCustomers(customersData);
         }
 
         if (decodedToken?.role === 'Admin') {
@@ -88,24 +107,24 @@ function SuccessPage() {
     <div className="container">
       {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
-          <ProductList products={products} />
+          <ProductList products={products} reloadProducts={loadProducts} />
           <CustomerList customers={customers} />
         </>
       )}
-  
+
       {userRole === 'Admin' && (
-      <>
-        <SalesList sales={sales} />
-        <AnalyticsReport
-          analytics={analytics}
-          startDate={startDate}
-          endDate={endDate}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-          fetchAnalytics={fetchAnalytics}
-        />
-      </>
-    )}
+        <>
+          <SalesList sales={sales} />
+          <AnalyticsReport
+            analytics={analytics}
+            startDate={startDate}
+            endDate={endDate}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+            fetchAnalytics={fetchAnalytics}
+          />
+        </>
+      )}
     </div>
   );
 }
