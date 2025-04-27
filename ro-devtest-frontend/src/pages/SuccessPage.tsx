@@ -50,6 +50,20 @@ function SuccessPage() {
     }
   };
 
+  const loadSales = async () => {
+    try {
+      const salesData = await getSales();
+      const safeSales = salesData.map(sale => ({
+        ...sale,
+        items: sale.items || [],
+      }));
+      setSales(safeSales);
+    } catch (err) {
+      console.error('Error loading sales:', err);
+      setError('Failed to load sales.');
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -70,8 +84,7 @@ function SuccessPage() {
         }
 
         if (decodedToken?.role === 'Admin') {
-          const salesData = await getSales();
-          setSales(salesData);
+          await loadSales();
         }
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -108,12 +121,17 @@ function SuccessPage() {
         <>
           <ProductList products={products} reloadProducts={loadProducts} />
           <CustomerList customers={customers} reloadCustomers={loadCustomers} />
-          </>
+        </>
       )}
 
       {userRole === 'Admin' && (
         <>
-          <SalesList sales={sales} />
+          <SalesList
+            sales={sales}
+            products={products}
+            customers={customers}
+            reloadSales={loadSales}
+          />
           <AnalyticsReport
             analytics={analytics}
             startDate={startDate}
