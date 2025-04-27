@@ -36,7 +36,6 @@ function SuccessPage() {
   const [descending, setDescending] = useState(false);
   const [pageSize, setPageSize] = useState(10);
 
-
   const loadCustomers = async () => {
     try {
       const customersResult = await getCustomers({ page: 1, pageSize: 50 });
@@ -46,7 +45,7 @@ function SuccessPage() {
       setError('Failed to load customers.');
     }
   };
-  
+
   const loadProducts = async () => {
     try {
       const productsResult = await getProducts({ page: 1, pageSize: 50 });
@@ -55,7 +54,7 @@ function SuccessPage() {
       console.error('Error loading products:', err);
       setError('Failed to load products.');
     }
-  };   
+  };
 
   const loadSales = async (pageToLoad: number) => {
     try {
@@ -70,7 +69,7 @@ function SuccessPage() {
       console.error('Error loading sales:', err);
       setError('Failed to load sales.');
     }
-  };  
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -79,28 +78,39 @@ function SuccessPage() {
       return;
     }
 
-    const decodedToken: any = jwtDecode(token);
-    setUserRole(decodedToken?.role);
-
-    const fetchData = async () => {
-      try {
-        if (decodedToken?.role === 'Admin' || decodedToken?.role === 'Customer') {
-          await loadProducts();
-          await loadCustomers();
-        }
-
-        if (decodedToken?.role === 'Admin') {
-          await loadSales(page);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data.');
-      } finally {
-        setLoading(false);
+    try {
+      const decodedToken: any = jwtDecode(token);
+      const now = Date.now() / 1000; // segundos
+      if (!decodedToken.exp || decodedToken.exp < now) {
+        localStorage.removeItem('accessToken');
+        navigate('/login');
+        return;
       }
-    };
+      setUserRole(decodedToken?.role);
 
-    fetchData();
+      const fetchData = async () => {
+        try {
+          if (decodedToken?.role === 'Admin' || decodedToken?.role === 'Customer') {
+            await loadProducts();
+            await loadCustomers();
+          }
+          if (decodedToken?.role === 'Admin') {
+            await loadSales(page);
+          }
+        } catch (err) {
+          console.error('Error fetching data:', err);
+          setError('Failed to load data.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    } catch (err) {
+      console.error('Invalid token', err);
+      localStorage.removeItem('accessToken');
+      navigate('/login');
+    }
   }, [navigate]);
 
   useEffect(() => {

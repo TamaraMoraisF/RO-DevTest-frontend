@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export const LoginPage = () => {
   const { loginUser } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -15,6 +16,7 @@ export const LoginPage = () => {
 
     try {
       await loginUser(username, password);
+      navigate('/success'); // ✅ redireciona após login
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         const apiErrors = error.response.data?.Errors;
