@@ -46,13 +46,13 @@ function SuccessPage() {
   
   const loadProducts = async () => {
     try {
-      const productsResult = await getProducts(1, 50);
+      const productsResult = await getProducts({ page: 1, pageSize: 50 });
       setProducts(productsResult.items);
     } catch (err) {
       console.error('Error loading products:', err);
       setError('Failed to load products.');
     }
-  };  
+  };   
 
   const loadSales = async (pageToLoad: number) => {
     try {

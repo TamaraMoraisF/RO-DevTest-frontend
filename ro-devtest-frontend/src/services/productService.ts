@@ -36,9 +36,15 @@ export async function deleteProduct(id: string): Promise<void> {
   await axios.delete(`/api/products/${id}`);
 }
 
-export async function getProducts(page: number = 1, pageSize: number = 10): Promise<PagedResult<Product>> {
-  const response = await axios.get<PagedResult<Product>>('/api/products', {
-    params: { page, pageSize },
-  });
+interface GetProductsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  descending?: boolean;
+}
+
+export async function getProducts(params: GetProductsParams = {}): Promise<PagedResult<Product>> {
+  const response = await axios.get<PagedResult<Product>>('/api/products', { params });
   return response.data;
 }

@@ -14,18 +14,21 @@ export const ProductList = ({ userRole }: { userRole: string | null }) => {
   const [productIdToDelete, setProductIdToDelete] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'price'>('name');
+  const [descending, setDescending] = useState(false);
 
   const isAdmin = userRole === 'Admin';
 
   useEffect(() => {
     fetchProducts();
-  }, [page]);
+  }, [page, pageSize, search, sortBy, descending]);
 
   const fetchProducts = async () => {
     try {
-      const data = await getProducts(page, pageSize);
+      const data = await getProducts({ page, pageSize, search, sortBy, descending });
       setProducts(data.items);
       setTotalPages(data.totalPages);
     } catch (error) {
@@ -33,19 +36,39 @@ export const ProductList = ({ userRole }: { userRole: string | null }) => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'price' && !/^\d*\.?\d*$/.test(value)) return;
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as 'name' | 'price');
+  };
+
+  const handleDescendingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDescending(e.target.checked);
+  };
+
+  const handlePageSizeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (value > 0) {
+      setPageSize(value);
+      setPage(1);
+    }
+  };  
+
   const handlePreviousPage = () => {
     if (page > 1) setPage(page - 1);
   };
 
   const handleNextPage = () => {
     if (page < totalPages) setPage(page + 1);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'price' && !/^\d*\.?\d*$/.test(value)) return;
-    setForm({ ...form, [name]: value });
   };
 
   const handleEditClick = (product: Product) => {
@@ -148,6 +171,61 @@ export const ProductList = ({ userRole }: { userRole: string | null }) => {
       )}
 
       <h2>Products</h2>
+
+
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          marginBottom: '20px',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '15px'
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Search product names..."
+          value={search}
+          onChange={handleSearchChange}
+          style={{ flex: '0 0 200px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        />
+
+        <select
+          value={sortBy}
+          onChange={handleSortChange}
+          style={{ flex: '0 0 150px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        >
+          <option value="name">Name</option>
+          <option value="price">Price</option>
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <input
+            type="checkbox"
+            checked={descending}
+            onChange={handleDescendingChange}
+            style={{ width: '16px', height: '16px' }}
+          />
+          Descending
+        </label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="number"
+            value={pageSize}
+            min={1}
+            onChange={handlePageSizeInputChange}
+            style={{ width: '80px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+          />
+          <small style={{ color: '#666' }}>
+            Records per page
+          </small>
+        </div>
+      </div>
 
       {isAdmin && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
