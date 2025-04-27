@@ -119,7 +119,7 @@ function SuccessPage() {
     <div className="container">
       {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
-          <ProductList products={products} reloadProducts={loadProducts} />
+          <ProductList products={products} reloadProducts={loadProducts} userRole={userRole} />
           <CustomerList customers={customers} reloadCustomers={loadCustomers} />
         </>
       )}

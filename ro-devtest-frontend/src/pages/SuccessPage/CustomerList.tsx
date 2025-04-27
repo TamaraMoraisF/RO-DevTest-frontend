@@ -7,9 +7,10 @@ import axios from 'axios';
 interface CustomerListProps {
   customers: Customer[];
   reloadCustomers: () => void;
+  userRole: string | null; // <--- ADICIONADO AQUI
 }
 
-export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) => {
+export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerListProps) => {
   const [form, setForm] = useState({ name: '', email: '' });
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -17,6 +18,8 @@ export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) 
 
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [customerIdToDelete, setCustomerIdToDelete] = useState<string | null>(null);
+
+  const isAdmin = userRole === 'Admin';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -129,70 +132,53 @@ export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) 
 
       <h2>Customers</h2>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
-        <h3>{editingCustomerId ? 'Edit Customer' : 'Create New Customer'}</h3>
+      {/* Formulário só para Admin */}
+      {isAdmin && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
+          <h3>{editingCustomerId ? 'Edit Customer' : 'Create New Customer'}</h3>
 
-        {successMessage && (
-          <div style={{ color: 'green', marginBottom: '10px' }}>
-            {successMessage}
-          </div>
-        )}
+          {successMessage && (
+            <div style={{ color: 'green', marginBottom: '10px' }}>
+              {successMessage}
+            </div>
+          )}
 
-        {errorMessages.length > 0 && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            <ul style={{ paddingLeft: '20px' }}>
-              {errorMessages.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {errorMessages.length > 0 && (
+            <div style={{ color: 'red', marginBottom: '10px' }}>
+              <ul style={{ paddingLeft: '20px' }}>
+                {errorMessages.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        <input
-          name="name"
-          placeholder="Customer Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
-        />
+          <input
+            name="name"
+            placeholder="Customer Name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
+          />
 
-        <input
-          name="email"
-          placeholder="Customer Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
-        />
+          <input
+            name="email"
+            placeholder="Customer Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
+          />
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            type="submit"
-            style={{
-              marginTop: '10px',
-              flex: 1,
-              backgroundColor: '#6c63ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            {editingCustomerId ? 'Update Customer' : 'Create Customer'}
-          </button>
-
-          {editingCustomerId && (
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              type="button"
-              onClick={handleCancelEdit}
+              type="submit"
               style={{
                 marginTop: '10px',
                 flex: 1,
-                backgroundColor: '#ccc',
-                color: '#333',
+                backgroundColor: '#6c63ff',
+                color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '12px',
@@ -200,12 +186,33 @@ export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) 
                 cursor: 'pointer'
               }}
             >
-              Cancel
+              {editingCustomerId ? 'Update Customer' : 'Create Customer'}
             </button>
-          )}
-        </div>
-      </form>
 
+            {editingCustomerId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{
+                  marginTop: '10px',
+                  flex: 1,
+                  backgroundColor: '#ccc',
+                  color: '#333',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+
+      {/* Lista de Clientes */}
       {customers.length === 0 ? (
         <p>No customers found.</p>
       ) : (
@@ -214,7 +221,7 @@ export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) 
             <tr>
               <th>Name</th>
               <th>Email</th>
-              <th style={{ textAlign: 'center' }}>Actions</th>
+              {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -222,39 +229,41 @@ export const CustomerList = ({ customers, reloadCustomers }: CustomerListProps) 
               <tr key={customer.id}>
                 <td>{customer.name}</td>
                 <td>{customer.email}</td>
-                <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleEditClick(customer)}
-                    style={{
-                      backgroundColor: '#ffa500',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Edit
-                  </button>
+                {isAdmin && (
+                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleEditClick(customer)}
+                      style={{
+                        backgroundColor: '#ffa500',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Edit
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteClick(customer.id)}
-                    style={{
-                      backgroundColor: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(customer.id)}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

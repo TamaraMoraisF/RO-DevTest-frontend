@@ -7,9 +7,10 @@ import axios from 'axios';
 interface ProductListProps {
   products: Product[];
   reloadProducts: () => void;
+  userRole: string | null; // <--- Adicionado aqui
 }
 
-export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
+export const ProductList = ({ products, reloadProducts, userRole }: ProductListProps) => {
   const [form, setForm] = useState({ name: '', price: '' });
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -17,6 +18,8 @@ export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
 
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState<string | null>(null);
+
+  const isAdmin = userRole === 'Admin';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -131,69 +134,52 @@ export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
 
       <h2>Products</h2>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
-        <h3>{editingProductId ? 'Edit Product' : 'Create New Product'}</h3>
+      {/* Formulário visível apenas para Admin */}
+      {isAdmin && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
+          <h3>{editingProductId ? 'Edit Product' : 'Create New Product'}</h3>
 
-        {successMessage && (
-          <div style={{ color: 'green', marginBottom: '10px' }}>
-            {successMessage}
-          </div>
-        )}
+          {successMessage && (
+            <div style={{ color: 'green', marginBottom: '10px' }}>
+              {successMessage}
+            </div>
+          )}
 
-        {errorMessages.length > 0 && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            <ul style={{ paddingLeft: '20px' }}>
-              {errorMessages.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {errorMessages.length > 0 && (
+            <div style={{ color: 'red', marginBottom: '10px' }}>
+              <ul style={{ paddingLeft: '20px' }}>
+                {errorMessages.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        <input
-          name="name"
-          placeholder="Product Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
-        />
+          <input
+            name="name"
+            placeholder="Product Name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
+          />
 
-        <input
-          name="price"
-          placeholder="Product Price"
-          value={form.price}
-          onChange={handleChange}
-          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
-        />
+          <input
+            name="price"
+            placeholder="Product Price"
+            value={form.price}
+            onChange={handleChange}
+            style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
+          />
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            type="submit"
-            style={{
-              marginTop: '10px',
-              flex: 1,
-              backgroundColor: '#6c63ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            {editingProductId ? 'Update Product' : 'Create Product'}
-          </button>
-
-          {editingProductId && (
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              type="button"
-              onClick={handleCancelEdit}
+              type="submit"
               style={{
                 marginTop: '10px',
                 flex: 1,
-                backgroundColor: '#ccc',
-                color: '#333',
+                backgroundColor: '#6c63ff',
+                color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '12px',
@@ -201,12 +187,33 @@ export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
                 cursor: 'pointer'
               }}
             >
-              Cancel
+              {editingProductId ? 'Update Product' : 'Create Product'}
             </button>
-          )}
-        </div>
-      </form>
 
+            {editingProductId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{
+                  marginTop: '10px',
+                  flex: 1,
+                  backgroundColor: '#ccc',
+                  color: '#333',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+
+      {/* Tabela de produtos */}
       {products.length === 0 ? (
         <p>No products found.</p>
       ) : (
@@ -215,7 +222,7 @@ export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
             <tr>
               <th>Name</th>
               <th>Price</th>
-              <th style={{ textAlign: 'center' }}>Actions</th>
+              {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -223,39 +230,41 @@ export const ProductList = ({ products, reloadProducts }: ProductListProps) => {
               <tr key={product.id}>
                 <td>{product.name}</td>
                 <td>${product.price.toFixed(2)}</td>
-                <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleEditClick(product)}
-                    style={{
-                      backgroundColor: '#ffa500',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Edit
-                  </button>
+                {isAdmin && (
+                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleEditClick(product)}
+                      style={{
+                        backgroundColor: '#ffa500',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Edit
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteClick(product.id)}
-                    style={{
-                      backgroundColor: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(product.id)}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
