@@ -8,7 +8,6 @@ interface CreateSaleRequest {
   items: {
     productId: string;
     quantity: number;
-    unitPrice: number;
   }[];
 }
 
