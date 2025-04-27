@@ -8,8 +8,8 @@ import { Sale } from '../models/Sale';
 import { SalesAnalyticsResult } from '../models/SalesAnalyticsResult';
 
 import { getProducts } from '../services/productService';
-import { getCustomers } from '../services/customerService';
 import { getSales, getSalesAnalytics } from '../services/saleService';
+import { getCustomers } from '../services/customerService';
 
 import { ProductList } from './SuccessPage/ProductList';
 import { CustomerList } from './SuccessPage/CustomerList';
@@ -30,39 +30,44 @@ function SuccessPage() {
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  const loadProducts = async () => {
-    try {
-      const productsData = await getProducts();
-      setProducts(productsData);
-    } catch (err) {
-      console.error('Error loading products:', err);
-      setError('Failed to load products.');
-    }
-  };
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const loadCustomers = async () => {
     try {
-      const customersData = await getCustomers();
-      setCustomers(customersData);
+      const customersResult = await getCustomers(1, 50);
+      setCustomers(customersResult.items);
     } catch (err) {
       console.error('Error loading customers:', err);
       setError('Failed to load customers.');
     }
   };
-
-  const loadSales = async () => {
+  
+  const loadProducts = async () => {
     try {
-      const salesData = await getSales();
-      const safeSales = salesData.map(sale => ({
+      const productsResult = await getProducts(1, 50);
+      setProducts(productsResult.items);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError('Failed to load products.');
+    }
+  };  
+
+  const loadSales = async (pageToLoad: number) => {
+    try {
+      const salesResult = await getSales(pageToLoad, pageSize);
+      const safeSales = salesResult.items.map((sale: Sale) => ({
         ...sale,
         items: sale.items || [],
       }));
       setSales(safeSales);
+      setTotalPages(salesResult.totalPages);
     } catch (err) {
       console.error('Error loading sales:', err);
       setError('Failed to load sales.');
     }
-  };
+  };  
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -77,14 +82,12 @@ function SuccessPage() {
     const fetchData = async () => {
       try {
         if (decodedToken?.role === 'Admin' || decodedToken?.role === 'Customer') {
-          await Promise.all([
-            loadProducts(),
-            loadCustomers(),
-          ]);
+          await loadProducts();
+          await loadCustomers();
         }
 
         if (decodedToken?.role === 'Admin') {
-          await loadSales();
+          await loadSales(page);
         }
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -96,6 +99,12 @@ function SuccessPage() {
 
     fetchData();
   }, [navigate]);
+
+  useEffect(() => {
+    if (userRole === 'Admin') {
+      loadSales(page);
+    }
+  }, [page]);
 
   const fetchAnalytics = async () => {
     if (!startDate || !endDate) {
@@ -119,8 +128,8 @@ function SuccessPage() {
     <div className="container">
       {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
-          <ProductList products={products} reloadProducts={loadProducts} userRole={userRole} />
-          <CustomerList customers={customers} reloadCustomers={loadCustomers} userRole={userRole} />
+          <ProductList userRole={userRole} />
+          <CustomerList userRole={userRole} />
         </>
       )}
 
@@ -130,7 +139,10 @@ function SuccessPage() {
             sales={sales}
             products={products}
             customers={customers}
-            reloadSales={loadSales}
+            reloadSales={() => loadSales(page)}
+            page={page}
+            totalPages={totalPages}
+            setPage={setPage}
           />
           <AnalyticsReport
             analytics={analytics}

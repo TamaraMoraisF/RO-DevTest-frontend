@@ -10,9 +10,12 @@ interface SalesListProps {
   products: Product[];
   customers: Customer[];
   reloadSales: () => void;
+  page: number;
+  totalPages: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export const SalesList = ({ sales, products, customers, reloadSales }: SalesListProps) => {
+export const SalesList = ({ sales, products, customers, reloadSales, page, totalPages, setPage }: SalesListProps) => {
   const [customerId, setCustomerId] = useState('');
   const [items, setItems] = useState([{ productId: '', quantity: '', unitPrice: '' }]);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -20,19 +23,10 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
 
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
-  
-    if (field === 'unitPrice') {
-      if (!/^\d*\.?\d*$/.test(value)) {
-        return;
-      }
-    }
-  
-    if (field === 'quantity') {
-      if (!/^\d*$/.test(value)) {
-        return;
-      }
-    }
-  
+
+    if (field === 'unitPrice' && !/^\d*\.?\d*$/.test(value)) return;
+    if (field === 'quantity' && !/^\d*$/.test(value)) return;
+
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
   };
@@ -60,14 +54,14 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
 
     items.forEach((item, index) => {
       const parsedQuantity = parseInt(item.quantity.toString(), 10);
-    
+
       if (!item.productId) {
         validationErrors.push(`Please select a product for item ${index + 1}.`);
       }
       if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
         validationErrors.push(`Please enter a valid quantity for item ${index + 1}.`);
       }
-    });    
+    });
 
     if (validationErrors.length > 0) {
       setErrorMessages(validationErrors);
@@ -81,7 +75,7 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
           productId: item.productId,
           quantity: parseInt(item.quantity.toString(), 10),
         })),
-      });      
+      });
 
       setSuccessMessage('Sale successfully created!');
       setCustomerId('');
@@ -148,7 +142,7 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
         </select>
 
         {items.map((item, index) => (
-          <div key={index} style={{ marginBottom: '20px', border: '1px solid #eee', padding: '10px', borderRadius: '10px', width: '100%', boxSizing: 'border-box', }}>
+          <div key={index} style={{ marginBottom: '20px', border: '1px solid #eee', padding: '10px', borderRadius: '10px' }}>
             <select
               value={item.productId}
               onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
@@ -186,7 +180,7 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
                 fontSize: '16px',
                 borderRadius: '8px',
                 border: '1px solid #ccc'
-              }}              
+              }}
             />
 
             {items.length > 1 && (
@@ -275,6 +269,14 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
               </table>
             </div>
           ))}
+        </div>
+      )}
+
+      {sales.length > 0 && (
+        <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+          <button onClick={() => page > 1 && setPage(page - 1)} disabled={page === 1}>Previous</button>
+          <span>Page {page} of {totalPages}</span>
+          <button onClick={() => page < totalPages && setPage(page + 1)} disabled={page === totalPages}>Next</button>
         </div>
       )}
     </>

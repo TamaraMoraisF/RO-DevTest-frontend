@@ -1,25 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Customer } from '../../models/Customer';
-import { createCustomer, updateCustomer, deleteCustomer } from '../../services/customerService';
+import { createCustomer, updateCustomer, deleteCustomer, getCustomers } from '../../services/customerService';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import axios from 'axios';
 
-interface CustomerListProps {
-  customers: Customer[];
-  reloadCustomers: () => void;
-  userRole: string | null; // <--- ADICIONADO AQUI
-}
-
-export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerListProps) => {
+export const CustomerList = ({ userRole }: { userRole: string | null }) => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState({ name: '', email: '' });
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [customerIdToDelete, setCustomerIdToDelete] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
   const isAdmin = userRole === 'Admin';
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [page]);
+
+  const fetchCustomers = async () => {
+    try {
+      const data = await getCustomers(page, pageSize);
+      setCustomers(data.items);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -54,7 +74,7 @@ export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerL
     try {
       await deleteCustomer(customerIdToDelete);
       setSuccessMessage('Customer successfully deleted!');
-      reloadCustomers();
+      fetchCustomers();
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         const apiErrors = error.response.data?.Errors;
@@ -85,23 +105,16 @@ export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerL
 
     try {
       if (editingCustomerId) {
-        await updateCustomer({
-          id: editingCustomerId,
-          name: form.name,
-          email: form.email,
-        });
+        await updateCustomer({ id: editingCustomerId, name: form.name, email: form.email });
         setSuccessMessage('Customer successfully updated!');
       } else {
-        await createCustomer({
-          name: form.name,
-          email: form.email,
-        });
+        await createCustomer({ name: form.name, email: form.email });
         setSuccessMessage('Customer successfully created!');
       }
 
       setForm({ name: '', email: '' });
       setEditingCustomerId(null);
-      reloadCustomers();
+      fetchCustomers();
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         const apiErrors = error.response.data?.Errors;
@@ -132,17 +145,11 @@ export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerL
 
       <h2>Customers</h2>
 
-      {/* Formulário só para Admin */}
       {isAdmin && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
           <h3>{editingCustomerId ? 'Edit Customer' : 'Create New Customer'}</h3>
 
-          {successMessage && (
-            <div style={{ color: 'green', marginBottom: '10px' }}>
-              {successMessage}
-            </div>
-          )}
-
+          {successMessage && <div style={{ color: 'green', marginBottom: '10px' }}>{successMessage}</div>}
           {errorMessages.length > 0 && (
             <div style={{ color: 'red', marginBottom: '10px' }}>
               <ul style={{ paddingLeft: '20px' }}>
@@ -212,62 +219,69 @@ export const CustomerList = ({ customers, reloadCustomers, userRole }: CustomerL
         </form>
       )}
 
-      {/* Lista de Clientes */}
       {customers.length === 0 ? (
         <p>No customers found.</p>
       ) : (
-        <table className="styled-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map(customer => (
-              <tr key={customer.id}>
-                <td>{customer.name}</td>
-                <td>{customer.email}</td>
-                {isAdmin && (
-                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(customer)}
-                      style={{
-                        backgroundColor: '#ffa500',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(customer.id)}
-                      style={{
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                )}
+        <>
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {customers.map(customer => (
+                <tr key={customer.id}>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  {isAdmin && (
+                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(customer)}
+                        style={{
+                          backgroundColor: '#ffa500',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(customer.id)}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Paginação */}
+          <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+            <button onClick={handlePreviousPage} disabled={page === 1}>Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button onClick={handleNextPage} disabled={page === totalPages}>Next</button>
+          </div>
+        </>
       )}
     </>
   );
