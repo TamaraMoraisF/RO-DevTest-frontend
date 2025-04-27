@@ -1,53 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios';
 import { jwtDecode } from 'jwt-decode';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-}
+import { Product } from '../models/Product';
+import { Customer } from '../models/Customer';
+import { Sale } from '../models/Sale';
+import { SalesAnalyticsResult } from '../models/SalesAnalyticsResult';
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-}
+import { getProducts } from '../services/productService';
+import { getCustomers } from '../services/customerService';
+import { getSales, getSalesAnalytics } from '../services/saleService';
 
-interface SaleItem {
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-interface Sale {
-  id: string;
-  customerName: string;
-  saleDate: string;
-  total: number;
-  items: SaleItem[];
-}
-
-interface PagedResult<T> {
-  items: T[];
-  totalItems: number;
-  totalPages: number;
-  currentPage: number;
-}
-
-interface ProductRevenueResult {
-  productId: string;
-  productName: string;
-  quantitySold: number;
-  revenue: number;
-}
-
-interface SalesAnalyticsResult {
-  totalSales: number;
-  totalRevenue: number;
-  productRevenueBreakdown: ProductRevenueResult[];
-}
+import { ProductList } from './SuccessPage/ProductList';
+import { CustomerList } from './SuccessPage/CustomerList';
+import { SalesList } from './SuccessPage/SalesList';
+import { AnalyticsReport } from './SuccessPage/AnalyticsReport';
 
 function SuccessPage() {
   const navigate = useNavigate();
@@ -56,9 +23,8 @@ function SuccessPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [analytics, setAnalytics] = useState<SalesAnalyticsResult | null>(null);
 
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -69,53 +35,36 @@ function SuccessPage() {
       navigate('/login');
       return;
     }
-  
+
     const decodedToken: any = jwtDecode(token);
     setUserRole(decodedToken?.role);
-  
+
     const fetchData = async () => {
       try {
-        const requests: Promise<any>[] = [];
-  
         if (decodedToken?.role === 'Admin' || decodedToken?.role === 'Customer') {
-          requests.push(
-            axios.get<PagedResult<Product>>('/api/products', { params: { page: 1, pageSize: 10 } }),
-            axios.get<PagedResult<Customer>>('/api/customers', { params: { page: 1, pageSize: 10 } })
-          );
+          const [productsData, customersData] = await Promise.all([
+            getProducts(),
+            getCustomers(),
+          ]);
+
+          setProducts(productsData);
+          setCustomers(customersData);
         }
-  
+
         if (decodedToken?.role === 'Admin') {
-          requests.push(
-            axios.get<PagedResult<Sale>>('/api/sales', { params: { page: 1, pageSize: 10 } })
-          );
+          const salesData = await getSales();
+          setSales(salesData);
         }
-  
-        const [productsResponse, customersResponse, salesResponse] = await Promise.all(requests);
-  
-        if (productsResponse) {
-          setProducts(productsResponse.data.items || []);
-        }
-  
-        if (customersResponse) {
-          setCustomers(customersResponse.data.items || []);
-        }
-  
-        if (salesResponse) {
-          setSales(salesResponse.data.items || []);
-        }
-  
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load products, customers, or sales.');
+        setError('Failed to load data.');
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, [navigate]);
-  
-  
 
   const fetchAnalytics = async () => {
     if (!startDate || !endDate) {
@@ -124,13 +73,11 @@ function SuccessPage() {
     }
 
     try {
-      const response = await axios.get<SalesAnalyticsResult>('/api/sales/analytics', {
-        params: { start: startDate, end: endDate },
-      });
-      setAnalytics(response.data);
+      const data = await getSalesAnalytics(startDate, endDate);
+      setAnalytics(data);
     } catch (err) {
       console.error('Error fetching analytics:', err);
-      setError('Failed to fetch sales analytics.');
+      setError('Failed to fetch analytics.');
     }
   };
 
@@ -139,151 +86,26 @@ function SuccessPage() {
 
   return (
     <div className="container">
-      {userRole === 'Admin' || userRole === 'Customer' ? (
+      {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
-          <h2>Products</h2>
-          {products.length === 0 ? (
-            <p>No products found.</p>
-          ) : (
-            <table className="styled-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map(product => (
-                  <tr key={product.id}>
-                    <td>{product.name}</td>
-                    <td>${product.price.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          <h2>Customers</h2>
-          {customers.length === 0 ? (
-            <p>No customers found.</p>
-          ) : (
-            <table className="styled-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map(customer => (
-                  <tr key={customer.id}>
-                    <td>{customer.name}</td>
-                    <td>{customer.email}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </>
-      ) : null}
-
-      {userRole === 'Admin' && (
-        <>
-          <h2>Sales</h2>
-          {sales.length === 0 ? (
-            <p>No sales found.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {sales.map(sale => (
-                <div key={sale.id} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '1rem' }}>
-                  <h3>Customer: {sale.customerName}</h3>
-                  <p>Sale Date: {new Date(sale.saleDate).toLocaleDateString()}</p>
-                  <p>Total: ${sale.total.toFixed(2)}</p>
-
-                  <table className="styled-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sale.items.map((item, idx) => (
-                        <tr key={idx}>
-                          <td>{item.productName}</td>
-                          <td>{item.quantity}</td>
-                          <td>${item.unitPrice.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <h2>Sales Analytics</h2>
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              fetchAnalytics();
-            }}
-            style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
-          >
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', fontWeight: 500 }}>
-                Start Date:
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
-                  style={{ marginTop: '0.5rem', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
-                />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', fontWeight: 500 }}>
-                End Date:
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  style={{ marginTop: '0.5rem', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
-                />
-              </label>
-              <button type="submit" style={{ padding: '0.75rem 1.5rem' }}>
-                Fetch Analytics
-              </button>
-            </div>
-          </form>
-
-          {analytics && (
-            <div>
-              <p><strong>Total Sales:</strong> {analytics.totalSales}</p>
-              <p><strong>Total Revenue:</strong> ${analytics.totalRevenue.toFixed(2)}</p>
-
-              <h3>Product Revenue Breakdown</h3>
-              <table className="styled-table">
-                <thead>
-                  <tr>
-                    <th>Product Name</th>
-                    <th>Quantity Sold</th>
-                    <th>Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.productRevenueBreakdown.map(product => (
-                    <tr key={product.productId}>
-                      <td>{product.productName}</td>
-                      <td>{product.quantitySold}</td>
-                      <td>${product.revenue.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ProductList products={products} />
+          <CustomerList customers={customers} />
         </>
       )}
+  
+      {userRole === 'Admin' && (
+      <>
+        <SalesList sales={sales} />
+        <AnalyticsReport
+          analytics={analytics}
+          startDate={startDate}
+          endDate={endDate}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+          fetchAnalytics={fetchAnalytics}
+        />
+      </>
+    )}
     </div>
   );
 }
