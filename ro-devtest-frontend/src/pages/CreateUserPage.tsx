@@ -17,7 +17,6 @@ export const CreateUserPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     if (name === 'role') {
       setForm({ ...form, [name]: Number(value) });
     } else {
@@ -49,55 +48,57 @@ export const CreateUserPage = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Create User</h2>
+    <div className="form-container">
+      <form onSubmit={handleSubmit}>
+        <h2>Create User</h2>
 
-      {successMessage && (
-        <div style={{ color: 'green', marginBottom: '10px' }}>
-          {successMessage}
-        </div>
-      )}
+        {successMessage && (
+          <div style={{ color: 'green', marginBottom: '10px' }}>
+            {successMessage}
+          </div>
+        )}
 
-      {errorMessages.length > 0 && (
-        <div style={{ color: 'red', marginBottom: '10px' }}>
-          <ul style={{ paddingLeft: '20px' }}>
-            {errorMessages.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {errorMessages.length > 0 && (
+          <div style={{ color: 'red', marginBottom: '10px' }}>
+            <ul style={{ paddingLeft: '20px' }}>
+              {errorMessages.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      <input name="userName" placeholder="Username" value={form.userName} onChange={handleChange} />
-      <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
-      <input name="email" placeholder="Email" value={form.email} onChange={handleChange} />
-      <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} />
-      <input type="password" name="passwordConfirmation" placeholder="Confirm Password" value={form.passwordConfirmation} onChange={handleChange} />
-      
-      <select
-        name="role"
-        value={form.role}
-        onChange={handleChange}
-        style={{
+        <input name="userName" placeholder="Username" value={form.userName} onChange={handleChange} />
+        <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
+        <input name="email" placeholder="Email" value={form.email} onChange={handleChange} />
+        <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} />
+        <input type="password" name="passwordConfirmation" placeholder="Confirm Password" value={form.passwordConfirmation} onChange={handleChange} />
+
+        <select
+          name="role"
+          value={form.role}
+          onChange={handleChange}
+          style={{
             width: '100%',
             padding: '12px 8px',
             marginBottom: '10px',
             borderRadius: '6px',
             border: '1px solid #ccc',
             fontSize: '16px',
-        }}
+          }}
         >
-        <option value={0}>Admin</option>
-        <option value={1}>Customer</option>
-      </select>
+          <option value={0}>Admin</option>
+          <option value={1}>Customer</option>
+        </select>
 
-      <button type="submit">Register</button>
+        <button type="submit">Register</button>
 
-      <div style={{ marginTop: '16px' }}>
-        <Link to="/login">
-          <button type="button">Back to Login</button>
-        </Link>
-      </div>
-    </form>
+        <div style={{ marginTop: '16px' }}>
+          <Link to="/login">
+            <button type="button">Back to Login</button>
+          </Link>
+        </div>
+      </form>
+    </div>
   );
 };
