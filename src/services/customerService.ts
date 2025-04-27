@@ -13,11 +13,12 @@ interface UpdateCustomerRequest {
   email: string;
 }
 
-export async function getCustomers(): Promise<Customer[]> {
-  const response = await axios.get<PagedResult<Customer>>('/api/customers', {
-    params: { page: 1, pageSize: 50 }
-  });
-  return response.data.items || [];
+interface GetCustomersParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: 'name' | 'email';
+  descending?: boolean;
 }
 
 export async function createCustomer(customer: CreateCustomerRequest): Promise<Customer> {
@@ -35,4 +36,14 @@ export async function updateCustomer(customer: UpdateCustomerRequest): Promise<C
 
 export async function deleteCustomer(id: string): Promise<void> {
   await axios.delete(`/api/customers/${id}`);
+}
+
+export async function getCustomers(params: GetCustomersParams = {}): Promise<PagedResult<Customer>> {
+  const { page = 1, pageSize = 10, search = '', sortBy = 'name', descending = false } = params;
+
+  const response = await axios.get<PagedResult<Customer>>('/api/customers', {
+    params: { page, pageSize, search, sortBy, descending },
+  });
+  
+  return response.data;
 }

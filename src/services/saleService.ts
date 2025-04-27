@@ -11,11 +11,11 @@ interface CreateSaleRequest {
   }[];
 }
 
-export async function getSales(): Promise<Sale[]> {
-  const response = await axios.get<PagedResult<Sale>>('/api/sales', {
-    params: { page: 1, pageSize: 50 },
-  });
-  return response.data.items || [];
+interface GetSalesParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  descending?: boolean;
 }
 
 export async function createSale(sale: CreateSaleRequest): Promise<Sale> {
@@ -27,5 +27,15 @@ export async function getSalesAnalytics(startDate: string, endDate: string): Pro
   const response = await axios.get<SalesAnalyticsResult>('/api/sales/analytics', {
     params: { start: startDate, end: endDate },
   });
+  return response.data;
+}
+
+export async function getSales(params: GetSalesParams = {}): Promise<PagedResult<Sale>> {
+  const { page = 1, pageSize = 10, sortBy = 'saleDate', descending = false } = params;
+
+  const response = await axios.get<PagedResult<Sale>>('/api/sales', {
+    params: { page, pageSize, sortBy, descending },
+  });
+
   return response.data;
 }

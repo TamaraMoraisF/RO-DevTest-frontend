@@ -1,36 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Product } from '../../models/Product';
-import { createProduct, updateProduct, deleteProduct } from '../../services/productService';
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../../services/productService';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import axios from 'axios';
 
-interface ProductListProps {
-  products: Product[];
-  reloadProducts: () => void;
-  userRole: string | null; // <--- Adicionado aqui
-}
-
-export const ProductList = ({ products, reloadProducts, userRole }: ProductListProps) => {
+export const ProductList = ({ userRole }: { userRole: string | null }) => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState({ name: '', price: '' });
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'price'>('name');
+  const [descending, setDescending] = useState(false);
+
   const isAdmin = userRole === 'Admin';
+
+  useEffect(() => {
+    fetchProducts();
+  }, [page, pageSize, search, sortBy, descending]);
+
+  const fetchProducts = async () => {
+    try {
+      const data = await getProducts({ page, pageSize, search, sortBy, descending });
+      setProducts(data.items);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'price') {
-      if (!/^\d*\.?\d*$/.test(value)) {
-        return;
-      }
-    }
-  
+    if (name === 'price' && !/^\d*\.?\d*$/.test(value)) return;
     setForm({ ...form, [name]: value });
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as 'name' | 'price');
+  };
+
+  const handleDescendingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDescending(e.target.checked);
+  };
+
+  const handlePageSizeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (value > 0) {
+      setPageSize(value);
+      setPage(1);
+    }
+  };  
+
+  const handlePreviousPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
   };
 
   const handleEditClick = (product: Product) => {
@@ -61,7 +99,7 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
     try {
       await deleteProduct(productIdToDelete);
       setSuccessMessage('Product successfully deleted!');
-      reloadProducts();
+      fetchProducts();
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         const apiErrors = error.response.data?.Errors;
@@ -94,23 +132,16 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
 
     try {
       if (editingProductId) {
-        await updateProduct({
-          id: editingProductId,
-          name: form.name,
-          price: parsedPrice,
-        });
+        await updateProduct({ id: editingProductId, name: form.name, price: parsedPrice });
         setSuccessMessage('Product successfully updated!');
       } else {
-        await createProduct({
-          name: form.name,
-          price: parsedPrice,
-        });
+        await createProduct({ name: form.name, price: parsedPrice });
         setSuccessMessage('Product successfully created!');
       }
 
       setForm({ name: '', price: '' });
       setEditingProductId(null);
-      reloadProducts();
+      fetchProducts();
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         const apiErrors = error.response.data?.Errors;
@@ -141,7 +172,61 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
 
       <h2>Products</h2>
 
-      {/* Formulário visível apenas para Admin */}
+
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          marginBottom: '20px',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '15px'
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Search product names..."
+          value={search}
+          onChange={handleSearchChange}
+          style={{ flex: '0 0 200px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        />
+
+        <select
+          value={sortBy}
+          onChange={handleSortChange}
+          style={{ flex: '0 0 150px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+        >
+          <option value="name">Name</option>
+          <option value="price">Price</option>
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <input
+            type="checkbox"
+            checked={descending}
+            onChange={handleDescendingChange}
+            style={{ width: '16px', height: '16px' }}
+          />
+          Descending
+        </label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="number"
+            value={pageSize}
+            min={1}
+            onChange={handlePageSizeInputChange}
+            style={{ width: '80px', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+          />
+          <small style={{ color: '#666' }}>
+            Records per page
+          </small>
+        </div>
+      </div>
+
       {isAdmin && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
           <h3>{editingProductId ? 'Edit Product' : 'Create New Product'}</h3>
@@ -176,6 +261,7 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
             placeholder="Product Price"
             value={form.price}
             onChange={handleChange}
+            required
             style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '10px', fontSize: '16px' }}
           />
 
@@ -220,62 +306,69 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
         </form>
       )}
 
-      {/* Tabela de produtos */}
       {products.length === 0 ? (
         <p>No products found.</p>
       ) : (
-        <table className="styled-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Price</th>
-              {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(product => (
-              <tr key={product.id}>
-                <td>{product.name}</td>
-                <td>${product.price.toFixed(2)}</td>
-                {isAdmin && (
-                  <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(product)}
-                      style={{
-                        backgroundColor: '#ffa500',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(product.id)}
-                      style={{
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                )}
+        <>
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Price</th>
+                {isAdmin && <th style={{ textAlign: 'center' }}>Actions</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map(product => (
+                <tr key={product.id}>
+                  <td>{product.name}</td>
+                  <td>${product.price.toFixed(2)}</td>
+                  {isAdmin && (
+                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(product)}
+                        style={{
+                          backgroundColor: '#ffa500',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(product.id)}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+            <button onClick={handlePreviousPage} disabled={page === 1}>Previous</button>
+            <span>Page {page} of {totalPages}</span>
+            <button onClick={handleNextPage} disabled={page === totalPages}>Next</button>
+          </div>
+        </>
       )}
     </>
   );

@@ -1,7 +1,7 @@
 import { SalesAnalyticsResult } from '../../models/SalesAnalyticsResult';
 
 interface AnalyticsReportProps {
-  analytics: SalesAnalyticsResult | null; // <--- aceita null agora
+  analytics: SalesAnalyticsResult | null;
   startDate: string;
   endDate: string;
   setStartDate: (date: string) => void;
