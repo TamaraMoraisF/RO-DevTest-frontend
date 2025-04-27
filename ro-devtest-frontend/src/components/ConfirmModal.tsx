@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 interface ConfirmModalProps {
   message: string;
   onConfirm: () => void;

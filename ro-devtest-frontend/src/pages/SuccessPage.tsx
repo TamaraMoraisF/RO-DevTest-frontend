@@ -30,7 +30,6 @@ function SuccessPage() {
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  // Função separada para carregar produtos
   const loadProducts = async () => {
     try {
       const productsData = await getProducts();
@@ -108,8 +107,8 @@ function SuccessPage() {
       {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
           <ProductList products={products} reloadProducts={loadProducts} />
-          <CustomerList customers={customers} />
-        </>
+          <CustomerList customers={customers} reloadCustomers={loadCustomers} />
+          </>
       )}
 
       {userRole === 'Admin' && (
