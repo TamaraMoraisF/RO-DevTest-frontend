@@ -31,24 +31,35 @@ export const LoginPage = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
+    <div className="form-container">
+      <form onSubmit={handleSubmit}>
+        <h2>Login</h2>
 
-      {errorMessage && (
-        <div style={{ color: 'red', marginBottom: '10px' }}>
-          {errorMessage}
+        {errorMessage && (
+          <div style={{ color: 'red', marginBottom: '10px' }}>
+            {errorMessage}
+          </div>
+        )}
+
+        <input
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          placeholder="Username"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Password"
+        />
+        <button type="submit">Login</button>
+
+        <div style={{ marginTop: '16px' }}>
+          <Link to="/create-user">
+            <button type="button">Create New User</button>
+          </Link>
         </div>
-      )}
-
-      <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" />
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" />
-      <button type="submit">Login</button>
-
-      <div style={{ marginTop: '16px' }}>
-        <Link to="/create-user">
-          <button type="button">Create New User</button>
-        </Link>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
