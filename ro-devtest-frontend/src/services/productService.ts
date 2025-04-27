@@ -19,10 +19,9 @@ interface PagedResult<T> {
   currentPage: number;
 }
 
-// ✅ Função que faltava:
 export async function getProducts(): Promise<Product[]> {
   const response = await axios.get<PagedResult<Product>>('/api/products', {
-    params: { page: 1, pageSize: 50 } // Você pode mudar o pageSize depois
+    params: { page: 1, pageSize: 50 }
   });
   return response.data.items;
 }

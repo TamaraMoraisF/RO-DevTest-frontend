@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Product } from '../../models/Product';
 import { createProduct, updateProduct, deleteProduct } from '../../services/productService';
-import { ConfirmModal } from '../../components/ConfirmModal'; // 👈 Importa o modal
+import { ConfirmModal } from '../../components/ConfirmModal';
 import axios from 'axios';
 
 interface ProductListProps {
