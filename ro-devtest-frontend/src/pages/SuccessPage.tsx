@@ -120,7 +120,7 @@ function SuccessPage() {
       {(userRole === 'Admin' || userRole === 'Customer') && (
         <>
           <ProductList products={products} reloadProducts={loadProducts} userRole={userRole} />
-          <CustomerList customers={customers} reloadCustomers={loadCustomers} />
+          <CustomerList customers={customers} reloadCustomers={loadCustomers} userRole={userRole} />
         </>
       )}
 
