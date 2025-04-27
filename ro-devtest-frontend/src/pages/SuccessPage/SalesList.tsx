@@ -60,18 +60,14 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
 
     items.forEach((item, index) => {
       const parsedQuantity = parseInt(item.quantity.toString(), 10);
-      const parsedUnitPrice = parseFloat(item.unitPrice.toString());
-
+    
       if (!item.productId) {
         validationErrors.push(`Please select a product for item ${index + 1}.`);
       }
       if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
         validationErrors.push(`Please enter a valid quantity for item ${index + 1}.`);
       }
-      if (isNaN(parsedUnitPrice) || parsedUnitPrice <= 0) {
-        validationErrors.push(`Please enter a valid unit price for item ${index + 1}.`);
-      }
-    });
+    });    
 
     if (validationErrors.length > 0) {
       setErrorMessages(validationErrors);
@@ -84,9 +80,8 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
         items: items.map(item => ({
           productId: item.productId,
           quantity: parseInt(item.quantity.toString(), 10),
-          unitPrice: parseFloat(item.unitPrice.toString()),
         })),
-      });
+      });      
 
       setSuccessMessage('Sale successfully created!');
       setCustomerId('');
@@ -192,24 +187,6 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
                 borderRadius: '8px',
                 border: '1px solid #ccc'
               }}              
-            />
-
-            <input
-              type="text"
-              placeholder="Unit Price"
-              value={item.unitPrice}
-              onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-              required
-              style={{
-                display: 'block',
-                width: '100%',
-                boxSizing: 'border-box',
-                marginBottom: '8px',
-                padding: '10px',
-                fontSize: '16px',
-                borderRadius: '8px',
-                border: '1px solid #ccc'
-              }}
             />
 
             {items.length > 1 && (
