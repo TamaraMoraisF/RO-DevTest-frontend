@@ -20,6 +20,19 @@ export const SalesList = ({ sales, products, customers, reloadSales }: SalesList
 
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
+  
+    if (field === 'unitPrice') {
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+    }
+  
+    if (field === 'quantity') {
+      if (!/^\d*$/.test(value)) {
+        return;
+      }
+    }
+  
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
   };

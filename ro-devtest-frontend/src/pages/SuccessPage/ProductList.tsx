@@ -23,6 +23,13 @@ export const ProductList = ({ products, reloadProducts, userRole }: ProductListP
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    if (name === 'price') {
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+    }
+  
     setForm({ ...form, [name]: value });
   };
 
