@@ -5,6 +5,10 @@ It provides a user interface to manage customers, products, and sales, supportin
 
 It was developed to meet the requirements of the **Rota das Oficinas technical test**.
 
+## 🎥 Demo
+
+![Frontend Demo](demo.gif)
+
 ## 🧩Features
 
 - **Login and Authentication:** Login screen with JWT authentication.
